@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.py[cod]
+.env
+.streamlit/secrets.toml
+.idea/
+.vscode/
+*.xlsx
+*.zip
+*.docx
