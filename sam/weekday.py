@@ -125,10 +125,13 @@ def frame_from_weekday(frame: pd.DataFrame) -> pd.DataFrame:
     return _with_ids(built)
 
 
-def inspect_workbook(data: bytes) -> list[dict[str, object]]:
+def inspect_workbook(data: bytes, on_sheet=None) -> list[dict[str, object]]:
     book = pd.ExcelFile(BytesIO(data))
     options: list[dict[str, object]] = []
-    for name in book.sheet_names:
+    total = len(book.sheet_names)
+    for index, name in enumerate(book.sheet_names):
+        if on_sheet is not None:
+            on_sheet(index, total, name)
         header = pd.read_excel(book, sheet_name=name, nrows=0)
         kind = classify_columns(header.columns)
         if kind is None:

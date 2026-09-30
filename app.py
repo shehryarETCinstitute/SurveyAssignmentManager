@@ -142,15 +142,134 @@ def _inject_css() -> None:
         .stApp:has(.sam-mark) header[data-testid="stHeader"] {
             background: transparent;
         }
+        .stApp:has(.sam-mark) {
+            background:
+                radial-gradient(1200px 420px at 15% -10%, #fffaf0 0%, transparent 70%),
+                radial-gradient(1000px 360px at 100% 0%, #f2fbf8 0%, transparent 65%),
+                #F6F4EF;
+        }
         .stApp:has(.sam-mark) .block-container {
-            padding-top: 1.4rem;
-            max-width: 1280px;
+            padding-top: 1.2rem;
+            max-width: 1360px;
+            padding-bottom: 4rem;
+        }
+        .stApp:has(.sam-mark) [data-testid="stToolbar"] {
+            right: 1rem;
+        }
+        .stApp:has(.sam-mark) h1,
+        .stApp:has(.sam-mark) h2,
+        .stApp:has(.sam-mark) h3 {
+            letter-spacing: -0.015em;
+        }
+        .stApp:has(.sam-mark) [data-testid="stVerticalBlockBorderWrapper"] {
+            border-radius: 12px;
+            border-color: #E4DDD2;
+            box-shadow: none;
+            background: #ffffff;
+            overflow: visible;
+        }
+        .stApp:has(.sam-mark) [data-testid="stVerticalBlockBorderWrapper"]:has(.sam-title) {
+            background: transparent;
+            border: 0;
+        }
+        .stApp:has(.sam-mark) [data-testid="stMarkdownContainer"] p {
+            line-height: 1.35;
+        }
+        .stApp:has(.sam-mark) label[data-testid="stWidgetLabel"] p {
+            font-size: 0.93rem;
+            font-weight: 600;
+            color: #3f3a35;
+        }
+        .stApp:has(.sam-mark) [data-testid="stExpander"] {
+            border-radius: 12px;
+            border: 1px solid #E4DDD2;
+            overflow: visible;
+            background: #ffffff;
+        }
+        .stApp:has(.sam-mark) [data-testid="stExpander"] details {
+            border: 0;
+            border-radius: 12px;
+            overflow: visible;
+        }
+        .stApp:has(.sam-mark) [data-testid="stExpander"] details summary {
+            background: #ffffff;
+            border-radius: 12px;
         }
         .stApp:has(.sam-mark) [data-testid="stFileUploader"] {
+            background: transparent;
+            border: 0;
+            padding: 0;
+        }
+        .stApp:has(.sam-mark) [data-testid="stFileUploaderDropzone"] {
+            min-height: 7.4rem;
+            border: 2px dashed #D8D0C3;
+            border-radius: 14px;
+            background: #FCFBF8;
+            padding: 0.8rem 1.1rem;
+        }
+        .stApp:has(.sam-mark) [data-testid="stFileUploaderDropzoneInstructions"] {
+            visibility: hidden;
+        }
+        .stApp:has(.sam-mark) [data-testid="stFileUploaderDropzone"] button {
+            border: 1px solid #0F6E56 !important;
+            color: #0F6E56 !important;
+            background: #ffffff !important;
+            border-radius: 10px !important;
+            min-height: 2.7rem;
+            padding: 0.35rem 1.15rem !important;
+            font-weight: 700;
+        }
+        .stApp:has(.sam-mark) .stElementContainer:has(.sam-upload-copy) {
+            margin-bottom: -6.15rem;
+            position: relative;
+            z-index: 2;
+            pointer-events: none;
+        }
+        .stApp:has(.sam-mark) [data-testid="stMetric"] {
             background: #ffffff;
-            border: 1px dashed #cfc6b8;
-            border-radius: 16px;
-            padding: 0.4rem 0.6rem 0.2rem;
+            border: 1px solid #E4DDD2;
+            border-radius: 12px;
+            padding: 0.72rem 0.92rem;
+            min-height: 104px;
+            box-shadow: none;
+        }
+        .stApp:has(.sam-mark) [data-testid="stMetricLabel"] {
+            color: #6A635A;
+        }
+        .stApp:has(.sam-mark) [data-testid="stMetricValue"] {
+            color: #1C1917;
+            font-weight: 700;
+        }
+        .stApp:has(.sam-mark) .stButton > button,
+        .stApp:has(.sam-mark) .stDownloadButton > button {
+            border-radius: 10px;
+            border: 1px solid #DCD4C7;
+            min-height: 2.72rem;
+            font-weight: 600;
+        }
+        .stApp:has(.sam-mark) .stButton > button:hover,
+        .stApp:has(.sam-mark) .stDownloadButton > button:hover {
+            border-color: #c8bfaf;
+        }
+        .stApp:has(.sam-mark) .stButton > button[kind="primary"] {
+            border-color: #0F6E56;
+            box-shadow: none;
+        }
+        .stApp:has(.sam-mark) .stTextInput input,
+        .stApp:has(.sam-mark) .stSelectbox div[data-baseweb="select"] > div,
+        .stApp:has(.sam-mark) .stTimeInput input,
+        .stApp:has(.sam-mark) .stNumberInput input {
+            border-radius: 10px;
+            min-height: 2.7rem;
+        }
+        .stApp:has(.sam-mark) .stCheckbox label {
+            font-weight: 500;
+            color: #3f3a35;
+        }
+        .stApp:has(.sam-mark) div[data-testid="stDataFrame"] {
+            border: 1px solid #E4DDD2;
+            border-radius: 12px;
+            overflow: visible;
         }
         .sam-kicker {
             margin: 0;
@@ -162,14 +281,25 @@ def _inject_css() -> None:
         }
         .sam-title {
             margin: 0.15rem 0 0.2rem;
-            font-size: 2rem;
+            font-size: 2.18rem;
             line-height: 1.1;
             color: #1C1917;
         }
         .sam-sub {
-            margin: 0;
-            color: #57534E;
-            font-size: 1.02rem;
+            margin: 0.28rem 0 0;
+            color: #4c4741;
+            font-size: 0.93rem;
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid #E8E2D7;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            padding: 0.34rem 0.7rem;
+        }
+        .sam-intro {
+            margin: 0.35rem 0 0;
+            color: #655F57;
+            font-size: 1rem;
         }
         .sam-banner {
             background: #ffffff;
@@ -185,6 +315,15 @@ def _inject_css() -> None:
             color: #1C1917;
         }
         .sam-banner p { margin: 0.15rem 0; color: #44403C; }
+        .stApp:has(.sam-mark) [data-testid="stProgress"] [role="progressbar"] {
+            height: 0.72rem;
+            border-radius: 999px;
+            background: #E7E2D8;
+        }
+        .stApp:has(.sam-mark) [data-testid="stProgress"] [role="progressbar"] > div {
+            background: #0F6E56;
+            border-radius: 999px;
+        }
         .sam-warn {
             background: #FFF7ED;
             color: #9A3412;
@@ -195,20 +334,373 @@ def _inject_css() -> None:
         .sam-steps {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 0.8rem;
-            margin: 1rem 0 1.2rem;
+            gap: 1rem;
+            margin: 1.15rem 0 1rem;
         }
         .sam-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.9rem;
             background: #ffffff;
-            border: 1px solid #e7e2d8;
-            border-radius: 16px;
+            border: 1px solid #E5DFD5;
+            border-radius: 15px;
+            padding: 1.15rem 1.2rem;
+            min-height: 7.1rem;
+        }
+        .sam-step-icon {
+            width: 2.6rem;
+            height: 2.6rem;
+            border-radius: 999px;
+            background: #E7F6F1;
+            color: #0F6E56;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .sam-step-icon svg { width: 1.25rem; height: 1.25rem; }
+        .sam-step small {
+            display: block;
+            margin-bottom: 0.25rem;
+            color: #0F6E56;
+            font-size: 0.75rem;
+            font-weight: 750;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .sam-step strong { display: block; margin-bottom: 0.3rem; font-size: 1rem; }
+        .sam-step span { color: #6A635B; font-size: 0.9rem; line-height: 1.45; }
+        .sam-upload-copy {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            min-height: 5.4rem;
+            padding: 0.35rem 11rem 0.2rem 1.15rem;
+        }
+        .sam-upload-icon {
+            width: 3.3rem;
+            height: 3.3rem;
+            border-radius: 14px;
+            background: #E7F6F1;
+            color: #0F6E56;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .sam-upload-icon svg { width: 1.7rem; height: 1.7rem; }
+        .sam-upload-copy h2 {
+            margin: 0 0 0.2rem;
+            font-size: 1.25rem;
+            color: #1C1917;
+        }
+        .sam-upload-copy p { margin: 0; color: #6A635B; font-size: 0.9rem; }
+        .sam-requirements, .sam-next {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.55rem;
+            margin-top: 0.85rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .sam-requirements { color: #625C54; }
+        .sam-requirements svg, .sam-next svg { width: 1.05rem; height: 1.05rem; flex-shrink: 0; margin-top: 0.15rem; }
+        .sam-requirements svg { color: #0F6E56; }
+        .sam-next {
+            align-items: center;
+            margin-top: 0.75rem;
+            margin-bottom: 1.1rem;
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            background: #EEF8F4;
+            color: #315E50;
+        }
+        .sam-next svg { color: #174E3E; }
+        .sam-next strong { color: #174E3E; }
+        .sam-progress {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            background: #ffffff;
+            border: 1px solid #E8E2D7;
+            border-radius: 14px;
+            padding: 0.8rem 1.4rem;
+            margin: 0.9rem 0 1rem;
+        }
+        .sam-progress-line {
+            flex: 1;
+            height: 2px;
+            border-radius: 2px;
+            background: #E4DDD2;
+        }
+        .sam-progress-line.done { background: #0F6E56; }
+        .sam-progress-dot svg { width: 0.95rem; height: 0.95rem; }
+        .sam-icon {
+            width: 2.6rem;
+            height: 2.6rem;
+            border-radius: 999px;
+            background: #E7F6F1;
+            color: #0F6E56;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .sam-icon svg { width: 1.25rem; height: 1.25rem; }
+        .sam-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.8rem;
+            margin-bottom: 0.9rem;
+        }
+        .sam-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            background: #ffffff;
+            border: 1px solid #E4DDD2;
+            border-radius: 12px;
             padding: 0.9rem 1rem;
         }
-        .sam-step strong { display: block; margin-bottom: 0.25rem; }
-        .sam-step span { color: #57534E; }
+        .sam-stat-label { margin: 0; color: #6A635A; font-size: 0.88rem; }
+        .sam-stat-value { margin: 0.1rem 0 0; color: #1C1917; font-size: 1.55rem; font-weight: 700; line-height: 1.15; }
+        .sam-review-head {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            margin: 0.4rem 0 0.2rem;
+        }
+        .sam-review-head h2 { margin: 0; font-size: 1.45rem; color: #1C1917; }
+        .sam-pill-warn {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 0.18rem 0.65rem;
+            background: #FFF4E5;
+            color: #9A5B00;
+            border: 1px solid #F5D9A8;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        .stApp:has(.sam-mark) [data-testid="stColumn"]:has(.sam-downloads) {
+            padding-left: 1.4rem;
+        }
+        .sam-count-badge {
+            border-radius: 999px;
+            padding: 0.12rem 0.6rem;
+            background: #E7F6F1;
+            color: #0F6E56;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        .sam-review-sub { margin: 0 0 0.7rem; color: #6A635A; font-size: 0.92rem; }
+        .sam-review-card {
+            background: #ffffff;
+            border: 1px solid #E4DDD2;
+            border-radius: 12px;
+            padding: 1rem 1.1rem 0.85rem;
+            margin-bottom: 0.9rem;
+        }
+        .sam-review-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.8rem;
+            padding-bottom: 0.85rem;
+            border-bottom: 1px solid #EFEAE2;
+        }
+        .sam-review-grid .sam-stat { border: 0; padding: 0; }
+        .sam-review-foot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding-top: 0.75rem;
+            color: #3F3A35;
+            font-size: 0.93rem;
+        }
+        .sam-review-foot .sam-where { display: inline-flex; align-items: center; gap: 0.45rem; }
+        .sam-review-foot .sam-where svg { width: 1.05rem; height: 1.05rem; color: #0F6E56; }
+        .sam-routes { display: inline-flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+        .sam-route {
+            display: inline-flex;
+            min-width: 2rem;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 0.15rem 0.6rem;
+            background: #E7F6F1;
+            color: #0F6E56;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+        .sam-card-title { margin: 0 0 0.6rem; font-size: 1.05rem; color: #1C1917; }
+        @media (max-width: 900px) {
+            .sam-stats, .sam-review-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .sam-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.35rem;
+        }
+        .sam-head h3 {
+            margin: 0;
+            font-size: 1.05rem;
+            color: #1C1917;
+        }
+        .sam-chips {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+        .sam-chip {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 0.18rem 0.62rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            line-height: 1.2;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+        .sam-chip.open {
+            background: #E7F6F1;
+            color: #0F6E56;
+            border-color: #B7E4D6;
+        }
+        .sam-chip.garage {
+            background: #F3F4F6;
+            color: #4B5563;
+            border-color: #E5E7EB;
+        }
+        .sam-chip.suggested {
+            background: #D1FAE5;
+            color: #065F46;
+            border-color: #A7F3D0;
+        }
+        .sam-chip.assigned {
+            background: #EEF2FF;
+            color: #3730A3;
+            border-color: #C7D2FE;
+        }
+        .sam-block-title {
+            margin: 0;
+            font-size: 1.15rem;
+            color: #1C1917;
+        }
+        .sam-block-count {
+            margin: 0.15rem 0 0;
+            color: #6B6560;
+            font-size: 0.92rem;
+        }
+        .sam-legend {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.9rem;
+            align-items: center;
+            color: #3F3A35;
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+        .sam-legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .sam-dot {
+            width: 0.55rem;
+            height: 0.55rem;
+            border-radius: 999px;
+            display: inline-block;
+        }
+        .sam-dot.open { background: #1FA971; }
+        .sam-dot.garage { background: #9CA3AF; }
+        .sam-trip-wrap {
+            max-height: 560px;
+            overflow: auto;
+            border: 1px solid #E4DDD2;
+            border-radius: 12px;
+        }
+        .sam-trip-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+        }
+        .sam-trip-table th {
+            position: sticky;
+            top: 0;
+            background: #F7F5F1;
+            color: #6B6560;
+            font-weight: 600;
+            text-align: left;
+            padding: 0.55rem 0.7rem;
+            border-bottom: 1px solid #E4DDD2;
+        }
+        .sam-trip-table td {
+            padding: 0.62rem 0.7rem;
+            border-bottom: 1px solid #F0EBE3;
+            color: #1C1917;
+            vertical-align: middle;
+        }
+        .sam-trip-table tr.garage td { color: #6B7280; background: #FAFAFA; }
+        .sam-trip-table tr.suggested td { background: #F3FBF7; }
+        .sam-trip-table tr.assigned td { background: #F7F8FF; }
+        .sam-status {
+            display: inline-flex;
+            border-radius: 999px;
+            padding: 0.12rem 0.55rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+        .sam-status.open { background: #E7F8F1; color: #128A62; border-color: #B7E4D6; }
+        .sam-status.garage { background: #F3F4F6; color: #6B7280; border-color: #E5E7EB; }
+        .sam-status.suggested { background: #D1FAE5; color: #065F46; border-color: #A7F3D0; }
+        .sam-status.assigned { background: #EEF2FF; color: #3730A3; border-color: #C7D2FE; }
+        .sam-progress-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            color: #7A746B;
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .sam-progress-dot {
+            width: 1.55rem;
+            height: 1.55rem;
+            border-radius: 999px;
+            border: 1px solid #D5CDC0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            background: #F8F6F1;
+            color: #7A746B;
+            flex-shrink: 0;
+        }
+        .sam-progress-item.active {
+            color: #1C1917;
+        }
+        .sam-progress-item.done .sam-progress-dot {
+            border-color: #0F6E56;
+            background: #E6F6F1;
+            color: #0F6E56;
+        }
+        .sam-progress-item.active .sam-progress-dot {
+            border-color: #0F6E56;
+            background: #0F6E56;
+            color: #ffffff;
+        }
         .sam-mark { display: none; }
         @media (max-width: 800px) {
             .sam-steps { grid-template-columns: 1fr; }
+            .sam-progress { flex-wrap: wrap; }
+            .sam-progress-line { display: none; }
+            .sam-upload-copy { padding-right: 1.15rem; }
         }
         </style>
         <div class="sam-mark"></div>
@@ -217,15 +709,65 @@ def _inject_css() -> None:
     )
 
 
-def _header(subtitle: str) -> None:
+def _header(subtitle: str, *, plain: bool = False) -> None:
+    subtitle_class = "sam-intro" if plain else "sam-sub"
     st.markdown(
         f"""
         <p class="sam-kicker">Field work</p>
         <h1 class="sam-title">{html.escape(APP_NAME)}</h1>
-        <p class="sam-sub">{html.escape(subtitle)}</p>
+        <p class="{subtitle_class}">{html.escape(subtitle)}</p>
         """,
         unsafe_allow_html=True,
     )
+
+
+_ICON_PATHS = {
+    "check": '<path d="M20 6 9 17l-5-5"/>',
+    "bus": '<path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/>',
+    "file": '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 13H8"/><path d="M16 17H8"/><path d="M16 13h-2"/>',
+    "users": '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    "hash": '<line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/>',
+    "clock": '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+    "calendar": '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/>',
+    "layers": '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+    "pin": '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+    "upload": '<path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M20 15v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/>',
+    "eye": '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+    "download": '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
+    "cloud": '<path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="m8 17 4-4 4 4"/>',
+    "info": '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+    "chevron": '<path d="m9 18 6-6-6-6"/>',
+}
+
+
+def _icon(name: str) -> str:
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+        f'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{_ICON_PATHS[name]}</svg>'
+    )
+
+
+def _stat(icon: str, label: str, value: str) -> str:
+    return (
+        f'<div class="sam-stat"><span class="sam-icon">{_icon(icon)}</span><div>'
+        f'<p class="sam-stat-label">{html.escape(label)}</p>'
+        f'<p class="sam-stat-value">{html.escape(value)}</p></div></div>'
+    )
+
+
+def _workflow_progress(active_step: int) -> None:
+    steps = ["Upload file", "Preview assignments", "Save & download"]
+    chunks: list[str] = []
+    for index, label in enumerate(steps, start=1):
+        state = " active" if index == active_step else (" done" if index < active_step else "")
+        dot = _icon("check") if index < active_step else str(index)
+        if index > 1:
+            line = " done" if index <= active_step else ""
+            chunks.append(f'<div class="sam-progress-line{line}"></div>')
+        chunks.append(
+            f'<div class="sam-progress-item{state}"><span class="sam-progress-dot">{dot}</span><span>{html.escape(label)}</span></div>'
+        )
+    st.markdown(f'<div class="sam-progress">{"".join(chunks)}</div>', unsafe_allow_html=True)
 
 
 def _summary(frame: pd.DataFrame, notes: dict) -> pd.DataFrame:
@@ -284,22 +826,46 @@ def _block_table(frame: pd.DataFrame, block: str, suggested: set[int]) -> pd.Dat
     return pd.DataFrame(rows)
 
 
-def _paint(table: pd.DataFrame):
-    def paint_row(row: pd.Series) -> list[str]:
-        status = row["Status"]
-        if status == SUGGESTED:
-            style = "background-color: #D1FAE5; color: #064E3B"
-        elif status == ASSIGNED:
-            style = "background-color: #EEF2FF; color: #312E81"
-        elif status == GARAGE:
-            style = "background-color: #F3F4F6; color: #6B7280"
-        else:
-            style = ""
-        return [style] * len(row)
+def _trip_table_html(table: pd.DataFrame) -> str:
+    status_class = {
+        OPEN: "open",
+        GARAGE: "garage",
+        SUGGESTED: "suggested",
+        ASSIGNED: "assigned",
+    }
+    headers = ["Start", "End", "Route", "Dir", "From", "To", "Status"]
+    head = "".join(f"<th>{html.escape(name)}</th>" for name in headers)
+    body: list[str] = []
+    for _, row in table.iterrows():
+        status = str(row["Status"])
+        css = status_class.get(status, "open")
+        cells = []
+        for name in headers[:-1]:
+            cells.append(f"<td>{html.escape(str(row[name]))}</td>")
+        cells.append(
+            f'<td><span class="sam-status {css}">{html.escape(status)}</span></td>'
+        )
+        body.append(f'<tr class="{css}">{"".join(cells)}</tr>')
+    return (
+        '<div class="sam-trip-wrap"><table class="sam-trip-table">'
+        f"<thead><tr>{head}</tr></thead><tbody>{''.join(body)}</tbody></table></div>"
+    )
 
-    if table.empty:
+
+def _paint(table: pd.DataFrame):
+    styles = {
+        SUGGESTED: "background-color: #D1FAE5; color: #065F46; font-weight: 700",
+        ASSIGNED: "background-color: #EEF2FF; color: #3730A3; font-weight: 700",
+        GARAGE: "background-color: #F3F4F6; color: #4B5563; font-weight: 700",
+        OPEN: "background-color: #E7F6F1; color: #0F6E56; font-weight: 700",
+    }
+
+    def paint_status(value: object) -> str:
+        return styles.get(str(value), "")
+
+    if table.empty or "Status" not in table.columns:
         return table
-    return table.style.apply(paint_row, axis=1)
+    return table.style.map(paint_status, subset=["Status"])
 
 
 def _route_path(frame: pd.DataFrame, row_ids: list[int]) -> str:
@@ -438,47 +1004,82 @@ def _unassign(frame: pd.DataFrame, label: str) -> None:
 
 
 def _upload_screen() -> None:
-    _header("Upload the Raw Weekday file. The working sheet is built from it, and every shift is previewed before it is saved.")
+    _header(
+        "Build clear survey shifts from a Raw Weekday workbook, review every trip, then save and download.",
+        plain=True,
+    )
+    _workflow_progress(1)
     st.markdown(
-        """
+        f"""
         <div class="sam-steps">
-            <div class="sam-step"><strong>1. Load Raw Weekday</strong><span>Garage moves stay visible and are left blank.</span></div>
-            <div class="sam-step"><strong>2. Preview the cut</strong><span>A full shift, or a short piece for someone who changes buses.</span></div>
-            <div class="sam-step"><strong>3. Save once</strong><span>The same label lands on the Weekday rows. Download the packet.</span></div>
+            <div class="sam-step"><span class="sam-step-icon">{_icon("upload")}</span><div><small>Step 1</small><strong>Upload Raw Weekday</strong><span>Choose the Excel workbook used for the survey schedule.</span></div></div>
+            <div class="sam-step"><span class="sam-step-icon">{_icon("eye")}</span><div><small>Step 2</small><strong>Preview the assignment</strong><span>Check the shift, trip itinerary, route and report location.</span></div></div>
+            <div class="sam-step"><span class="sam-step-icon">{_icon("download")}</span><div><small>Step 3</small><strong>Save &amp; download</strong><span>Save the assignment and download the workbook or Word packets.</span></div></div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-    uploaded = st.file_uploader(
-        "Weekday workbook",
-        type=["xlsx", "xlsm"],
-        key=f"uploader_{st.session_state.get('uploader_key', 0)}",
-        label_visibility="collapsed",
-    )
-    if uploaded is not None:
-        token = (uploaded.name, uploaded.size)
-        if token != st.session_state.get("upload_token"):
-            data = uploaded.getvalue()
-            try:
-                options = inspect_workbook(data)
-            except Exception as exc:
-                st.error(f"Could not read that workbook. {exc}")
-                return
-            st.session_state["upload_bytes"] = data
-            st.session_state["upload_name"] = uploaded.name
-            st.session_state["upload_token"] = token
-            st.session_state["sheet_options"] = options
-            if not options:
-                st.error("No Raw Weekday or Weekday sheet was found. The raw sheet needs Block, Route, Start, End, trip place names, and Type.")
-                return
-            choice = auto_choice(options)
-            if choice is not None:
+    with st.container(border=True):
+        st.markdown(
+            f"""
+            <div class="sam-upload-copy">
+                <span class="sam-upload-icon">{_icon("cloud")}</span>
+                <div>
+                    <h2>Upload Raw Weekday file</h2>
+                    <p>Drag and drop your Excel workbook here · XLSX or XLSM · Up to 50 MB</p>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        uploaded = st.file_uploader(
+            "Weekday workbook",
+            type=["xlsx", "xlsm"],
+            key=f"uploader_{st.session_state.get('uploader_key', 0)}",
+            label_visibility="collapsed",
+        )
+        if uploaded is not None:
+            token = (uploaded.name, uploaded.size)
+            if token != st.session_state.get("upload_token"):
+                bar = st.progress(6, text="Reading the file…")
+                data = uploaded.getvalue()
+
+                def _tick(done: int, total: int, name: str) -> None:
+                    bar.progress(12 + int(56 * done / max(total, 1)), text=f"Checking {name}…")
+
                 try:
-                    _load_choice(choice)
+                    options = inspect_workbook(data, on_sheet=_tick)
                 except Exception as exc:
-                    st.error(str(exc))
+                    bar.empty()
+                    st.error(f"Could not read that workbook. {exc}")
                     return
-                st.rerun()
+                st.session_state["upload_bytes"] = data
+                st.session_state["upload_name"] = uploaded.name
+                st.session_state["upload_token"] = token
+                st.session_state["sheet_options"] = options
+                if not options:
+                    bar.empty()
+                    st.error("No Raw Weekday or Weekday sheet was found. The raw sheet needs Block, Route, Start, End, trip place names, and Type.")
+                    return
+                choice = auto_choice(options)
+                if choice is not None:
+                    bar.progress(78, text=f"Building {choice['name']}…")
+                    try:
+                        _load_choice(choice)
+                    except Exception as exc:
+                        bar.empty()
+                        st.error(str(exc))
+                        return
+                    bar.progress(100, text="Opening assignments…")
+                    st.rerun()
+                bar.empty()
+        st.markdown(
+            f"""
+            <div class="sam-requirements">{_icon("info")}<span>The workbook should contain a <strong>Raw Weekday</strong> sheet with Block, Route, start/end times, trip locations and Type.</span></div>
+            <div class="sam-next">{_icon("chevron")}<span><strong>What happens next:</strong> We find the correct sheet, build the working copy and open the assignment workspace.</span></div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     options = st.session_state.get("sheet_options") or []
     if options and st.session_state.get("frame") is None:
@@ -490,11 +1091,14 @@ def _upload_screen() -> None:
             else:
                 detail = f"{option['name']} · {int(option['rows']):,} rows · {int(option['assigned']):,} already assigned"
             if st.button(detail, key=f"pick_{option['name']}", use_container_width=True):
+                bar = st.progress(20, text=f"Building {option['name']}…")
                 try:
                     _load_choice(option)
                 except Exception as exc:
+                    bar.empty()
                     st.error(str(exc))
                     return
+                bar.progress(100, text="Opening assignments…")
                 st.rerun()
 
 
@@ -521,22 +1125,28 @@ def _workspace() -> None:
     _seed("builder_name", "")
 
     kind = "Raw Weekday" if st.session_state.get("source_kind") == "raw" else "Weekday"
-    _header(f"{st.session_state.get('upload_name', 'Workbook')} · {kind} sheet “{st.session_state.get('source_sheet', '')}”")
+    title_col, button_col = st.columns([5, 1], vertical_alignment="center")
+    with title_col:
+        _header(f"{st.session_state.get('upload_name', 'Workbook')} · {kind} sheet “{st.session_state.get('source_sheet', '')}”")
+    with button_col:
+        if st.button("New file", icon=":material/upload_file:", use_container_width=True):
+            _clear_work()
+            st.rerun()
+    _workflow_progress(3 if not summary.empty else 2)
     if flash:
         st.success(flash)
 
     open_count = open_regular_count(frame)
     assigned_labels = assignment_labels(frame)
-    metric_cols = st.columns([1, 1, 1, 1, 1.3])
-    metric_cols[0].metric("Trips", f"{len(frame):,}")
-    metric_cols[1].metric("Open regular", f"{open_count:,}")
-    metric_cols[2].metric("Assignments", f"{len(assigned_labels):,}")
-    metric_cols[3].metric("Next number", str(next_assignment_number(frame)))
-    with metric_cols[4]:
-        st.write("")
-        if st.button("New file", use_container_width=True):
-            _clear_work()
-            st.rerun()
+    st.markdown(
+        '<div class="sam-stats">'
+        + _stat("bus", "Trips", f"{len(frame):,}")
+        + _stat("file", "Open regular", f"{open_count:,}")
+        + _stat("users", "Assignments", f"{len(assigned_labels):,}")
+        + _stat("hash", "Next number", str(next_assignment_number(frame)))
+        + "</div>",
+        unsafe_allow_html=True,
+    )
 
     other_sheets = [
         option
@@ -573,7 +1183,7 @@ def _workspace() -> None:
     last = last_assigned_row(frame, name_now) if continuing else None
     include_garage = bool(st.session_state.get("include_garage"))
 
-    left, right = st.columns([0.92, 1.08], gap="large")
+    left, right = st.columns([0.86, 1.14], gap="large")
     with left:
         with st.container(border=True):
             st.markdown("**Cut a shift**")
@@ -704,9 +1314,8 @@ def _workspace() -> None:
                     disabled=not selected_block,
                 )
             else:
-                button_left, button_right = st.columns(2)
-                suggest_full = button_left.button("Suggest full shift", type="primary", use_container_width=True, disabled=not selected_block)
-                suggest_round = button_right.button("Suggest round trip", use_container_width=True, disabled=not selected_block)
+                suggest_full = st.button("Suggest full shift", type="primary", use_container_width=True, disabled=not selected_block)
+                suggest_round = st.button("Suggest round trip", use_container_width=True, disabled=not selected_block)
 
             if selected_block and (suggest_full or suggest_round or suggest_next):
                 mode = "round" if suggest_round or suggest_next else "full"
@@ -735,22 +1344,30 @@ def _workspace() -> None:
     with right:
         with st.container(border=True):
             block_name = st.session_state.get("builder_block") or "—"
-            st.markdown(f"**Block {block_name}**")
             if not block_name or block_name == "—":
+                st.markdown("**Block**")
                 st.caption("Choose a block to see its day.")
-                table = pd.DataFrame()
             else:
                 table = _block_table(frame, block_name, suggested_ids)
                 counts = table["Status"].value_counts() if not table.empty else {}
-                st.caption(
-                    " · ".join(
-                        f"{counts.get(name, 0)} {name.lower()}"
-                        for name in (OPEN, SUGGESTED, ASSIGNED, GARAGE)
-                        if counts.get(name, 0)
-                    )
-                    or "No trips"
+                open_n = int(counts.get(OPEN, 0))
+                garage_n = int(counts.get(GARAGE, 0))
+                st.markdown(
+                    f"""
+                    <div class="sam-head">
+                        <div>
+                            <h3 class="sam-block-title">Block {html.escape(str(block_name))}</h3>
+                            <p class="sam-block-count">{open_n} open trips · {garage_n} garage moves</p>
+                        </div>
+                        <div class="sam-legend">
+                            <span><i class="sam-dot open"></i>Open</span>
+                            <span><i class="sam-dot garage"></i>Garage</span>
+                        </div>
+                    </div>
+                    {_trip_table_html(table)}
+                    """,
+                    unsafe_allow_html=True,
                 )
-                st.dataframe(_paint(table), use_container_width=True, hide_index=True, height=560)
 
     if active:
         row_ids = [int(value) for value in active["row_ids"]]
@@ -783,15 +1400,27 @@ def _workspace() -> None:
                 elif gap > int(st.session_state["max_switch"]):
                     warnings.append(f"{gap} minutes between the last trip and this piece.")
         verb = "Added to" if label_exists(frame, label) else "Saved as"
+        routes = [value for value in (_route_path(frame, row_ids) or "").split(", ") if value]
+        route_chips = "".join(f'<span class="sam-route">{html.escape(value)}</span>' for value in routes) or "—"
+        shift_time = f"{format_time(first['Start Time'])} – {format_time(last_row['End Time'])}"
         st.markdown(
             f"""
-            <div class="sam-banner">
-                <p class="sam-kicker">Preview · not saved yet</p>
-                <h2>{html.escape(format_hours(hours) or "—")}</h2>
-                <p>{html.escape(format_time(first['Start Time']))} – {html.escape(format_time(last_row['End Time']))}
-                · {len(row_ids)} trips · block {html.escape(str(active['block']))}</p>
-                <p>Report at {html.escape(clean_token(first['Start Location']))} at {html.escape(subtract_minutes(first['Start Time'], 15))}</p>
-                <p>Routes {html.escape(_route_path(frame, row_ids) or "—")} · {html.escape(verb)} {html.escape(label)}</p>
+            <div class="sam-review-head">
+                <h2>Review assignment {html.escape(label)}</h2>
+                <span class="sam-pill-warn">Not saved yet</span>
+            </div>
+            <p class="sam-review-sub">Check the trips and adjust the shift before saving. {html.escape(verb)} {html.escape(label)}.</p>
+            <div class="sam-review-card">
+                <div class="sam-review-grid">
+                    {_stat("clock", "Shift duration", format_hours(hours) or "—")}
+                    {_stat("calendar", "Shift time", shift_time)}
+                    {_stat("bus", "Trips", str(len(row_ids)))}
+                    {_stat("layers", "Block", f"Block {active['block']}")}
+                </div>
+                <div class="sam-review-foot">
+                    <span class="sam-where">{_icon("pin")}Report at {html.escape(clean_token(first['Start Location']))} · {html.escape(subtract_minutes(first['Start Time'], 15))}</span>
+                    <span class="sam-routes">Routes {route_chips}</span>
+                </div>
                 {''.join(f'<div class="sam-warn">{html.escape(item)}</div>' for item in warnings)}
             </div>
             """,
@@ -799,9 +1428,17 @@ def _workspace() -> None:
         )
         preview_rows = _block_table(frame, str(active["block"]), set(row_ids))
         preview_rows = preview_rows.loc[preview_rows["Status"].eq(SUGGESTED), ["Start", "End", "Route", "Dir", "From", "To"]]
-        st.dataframe(preview_rows, use_container_width=True, hide_index=True, height=min(420, 48 + 36 * max(len(preview_rows), 1)))
-        st.text_input("Note for the packet", key="cut_note", placeholder="Switch bus, break, survey the queue")
-        action_a, action_b, action_c = st.columns([1, 1, 2])
+        with st.container(border=True):
+            st.markdown('<p class="sam-card-title"><strong>Trip itinerary</strong></p>', unsafe_allow_html=True)
+            st.dataframe(
+                preview_rows.rename(columns={"Dir": "Direction"}),
+                use_container_width=True,
+                hide_index=True,
+                height=min(460, 40 + 35 * max(len(preview_rows), 1)),
+            )
+            st.text_input("Note for the packet", key="cut_note", placeholder="Switch bus, break, survey the queue")
+            st.caption("This note appears in the Word packet.")
+            action_a, action_b, action_c = st.columns([1, 1, 2])
         if action_a.button("Shorter", use_container_width=True, disabled=len(row_ids) <= 1):
             active["row_ids"] = row_ids[:-1]
             st.session_state["suggestion"] = active
@@ -823,71 +1460,92 @@ def _workspace() -> None:
     elif suggestion:
         st.caption("The block or garage setting changed. Suggest the shift again.")
 
-    st.markdown("**Assignments**")
-    board_left, board_right = st.columns([1.4, 1])
-    with board_left:
-        if summary.empty:
-            st.caption("Saved shifts will show up here. Select one to keep adding to that person.")
-        else:
-            st.dataframe(
-                summary,
-                use_container_width=True,
-                hide_index=True,
-                height=min(360, 48 + 36 * len(summary)),
-                selection_mode="single-row",
-                on_select="rerun",
-                key="made_table",
-            )
-            st.caption("Select a row to continue that assignment, or to clear it.")
-            selected_label = ""
-            if picked and picked[0] < len(summary):
-                selected_label = str(summary.iloc[picked[0]]["Assignment"])
-            if st.button(
-                "Unassign selected assignment",
-                disabled=not selected_label,
-                use_container_width=True,
-            ):
-                _unassign(frame, selected_label)
-                st.rerun()
-        if st.session_state.get("undo") and st.button("Undo last save"):
-            _undo(frame)
-            st.rerun()
-    with board_right:
-        st.caption("Notes are printed on the Word packet. The Weekday sheet stays a trip grid.")
-        excel = _excel_download(frame)
-        st.download_button(
-            "Download Weekday workbook",
-            data=excel,
-            file_name="Weekday.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True,
+    with st.container(border=True):
+        st.markdown(
+            f'<div class="sam-review-head" style="margin-top:0"><h3 class="sam-block-title">Saved assignments</h3>'
+            f'<span class="sam-count-badge">{len(summary)} saved</span></div>',
+            unsafe_allow_html=True,
         )
-        current = clean_token(st.session_state.get("builder_name"))
-        if current and label_exists(frame, current):
-            packet = _packet_download(frame, current, notes)
+        board_left, board_right = st.columns([1.45, 1])
+        with board_left:
+            if summary.empty:
+                st.caption("Saved shifts will show up here. Select one to keep adding to that person.")
+                undo_slot = st.container()
+            else:
+                st.dataframe(
+                    summary,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=38 + 35 * len(summary) if len(summary) <= 9 else 360,
+                    selection_mode="single-row",
+                    on_select="rerun",
+                    key="made_table",
+                )
+                st.caption("Tick a row to continue that assignment or unassign it.")
+                selected_label = ""
+                if picked and picked[0] < len(summary):
+                    selected_label = str(summary.iloc[picked[0]]["Assignment"])
+                unassign_slot, undo_slot = st.columns(2)
+                if unassign_slot.button(
+                    "Unassign selected assignment",
+                    icon=":material/delete:",
+                    disabled=not selected_label,
+                    use_container_width=True,
+                ):
+                    _unassign(frame, selected_label)
+                    st.rerun()
+            if st.session_state.get("undo") and undo_slot.button(
+                "Undo last save", icon=":material/undo:", use_container_width=True
+            ):
+                _undo(frame)
+                st.rerun()
+        with board_right:
+            st.markdown(
+                '<p class="sam-card-title sam-downloads" style="margin-bottom:0.1rem"><strong>Downloads</strong></p>'
+                '<p class="sam-review-sub">Notes are printed on the Word packet. The Weekday sheet stays a trip grid.</p>',
+                unsafe_allow_html=True,
+            )
+            excel = _excel_download(frame)
             st.download_button(
-                f"Download {current}",
-                data=packet,
-                file_name=f"{_file_piece(current)}.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "Download Weekday workbook",
+                data=excel,
+                file_name="Weekday.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                type="primary",
+                icon=":material/download:",
                 use_container_width=True,
             )
-        if assigned_labels:
-            if st.button("Prepare all Word packets", use_container_width=True):
-                try:
-                    st.session_state["word_zip"] = packets_zip(frame, notes)
-                    st.session_state["word_rev"] = st.session_state.get("revision", 0)
-                except Exception as exc:
-                    st.error(str(exc))
-            if st.session_state.get("word_zip") and st.session_state.get("word_rev") == st.session_state.get("revision", 0):
+            current = clean_token(st.session_state.get("builder_name"))
+            if current and label_exists(frame, current):
+                packet = _packet_download(frame, current, notes)
                 st.download_button(
-                    "Download all packets",
-                    data=st.session_state["word_zip"],
-                    file_name="assignment_packets.zip",
-                    mime="application/zip",
+                    f"Download {current}",
+                    data=packet,
+                    file_name=f"{_file_piece(current)}.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    icon=":material/description:",
                     use_container_width=True,
                 )
-        st.caption("Download the workbook before you close this page. The sheet lives in this session.")
+            if assigned_labels:
+                if st.button("Prepare all Word packets", icon=":material/article:", use_container_width=True):
+                    try:
+                        st.session_state["word_zip"] = packets_zip(frame, notes)
+                        st.session_state["word_rev"] = st.session_state.get("revision", 0)
+                    except Exception as exc:
+                        st.error(str(exc))
+                if st.session_state.get("word_zip") and st.session_state.get("word_rev") == st.session_state.get("revision", 0):
+                    st.download_button(
+                        "Download all packets",
+                        data=st.session_state["word_zip"],
+                        file_name="assignment_packets.zip",
+                        mime="application/zip",
+                        icon=":material/folder_zip:",
+                        use_container_width=True,
+                    )
+            st.markdown(
+                '<div class="sam-warn" style="margin-bottom:1.1rem">Download the workbook before you close this page. The sheet lives only in this session.</div>',
+                unsafe_allow_html=True,
+            )
 
 
 def _excel_download(frame: pd.DataFrame) -> bytes:
