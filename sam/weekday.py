@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from io import BytesIO
 
 import pandas as pd
@@ -67,12 +68,23 @@ def _series(frame: pd.DataFrame, *aliases: str) -> pd.Series:
     return pd.Series([""] * len(frame), index=frame.index)
 
 
+def _clock_value(value: object) -> object:
+    minutes = time_to_minutes(value)
+    if minutes is None:
+        parsed = pd.to_datetime(value, errors="coerce")
+        if pd.isna(parsed):
+            return pd.NaT
+        minutes = int(parsed.hour) * 60 + int(parsed.minute)
+    hour, minute = divmod(minutes, 60)
+    return datetime(2000, 1, 1, hour, minute)
+
+
 def _clock(frame: pd.DataFrame, *aliases: str) -> pd.Series:
     lookup = _lookup(frame.columns)
     for alias in aliases:
         source = lookup.get(alias)
         if source is not None:
-            return pd.to_datetime(frame[source], errors="coerce")
+            return pd.to_datetime(frame[source].map(_clock_value), errors="coerce")
     return pd.Series(pd.NaT, index=frame.index)
 
 
