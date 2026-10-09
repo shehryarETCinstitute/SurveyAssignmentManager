@@ -50,6 +50,8 @@ from sam.weekday import (
     load_sheet,
     next_assignment_number,
     open_regular_count,
+    sample_frame,
+    sample_workbook_bytes,
 )
 
 SUGGESTED = "Suggested"
@@ -788,9 +790,68 @@ def _summary(frame: pd.DataFrame, notes: dict) -> pd.DataFrame:
                 "To": format_time(last["End Time"]),
                 "Hours": format_hours(duration_hours(first["Start Time"], last["End Time"])),
                 "Notes": len(notes.get(label, [])),
+                "_start": time_to_minutes(first["Start Time"]),
+                "_hours": duration_hours(first["Start Time"], last["End Time"]),
             }
         )
     return pd.DataFrame(records)
+
+
+_SUMMARY_COLUMNS = ["Assignment", "Trips", "Blocks", "From", "To", "Hours", "Notes"]
+_WHEN_CHOICES = [
+    "All",
+    "Morning · before 12 PM",
+    "Afternoon · 12 to 5 PM",
+    "Evening · after 5 PM",
+]
+
+
+def _assignment_view(summary: pd.DataFrame) -> pd.DataFrame:
+    if st.session_state.get("assign_when") not in _WHEN_CHOICES:
+        st.session_state["assign_when"] = "All"
+    _seed("assign_when", "All")
+    _seed("assign_find", "")
+    _seed("assign_length", "Any length")
+    _seed("assign_notes", "All notes")
+    token = "|".join(
+        str(st.session_state.get(key) or "")
+        for key in ("assign_when", "assign_find", "assign_length", "assign_notes")
+    )
+    if st.session_state.get("_assign_filter") != token:
+        st.session_state["_assign_filter"] = token
+        st.session_state.pop("made_table", None)
+    if summary.empty:
+        return summary
+    view = summary
+    when = st.session_state.get("assign_when") or "All"
+    if when != "All":
+        start = view["_start"]
+        if when.startswith("Morning"):
+            view = view.loc[start.lt(12 * 60)]
+        elif when.startswith("Afternoon"):
+            view = view.loc[start.ge(12 * 60) & start.lt(17 * 60)]
+        elif when.startswith("Evening"):
+            view = view.loc[start.ge(17 * 60)]
+    query = clean_token(st.session_state.get("assign_find")).casefold()
+    if query:
+        assignment = view["Assignment"].map(lambda value: clean_token(value).casefold())
+        blocks = view["Blocks"].map(lambda value: clean_token(value).casefold())
+        view = view.loc[assignment.str.contains(query, regex=False) | blocks.str.contains(query, regex=False)]
+    length = st.session_state.get("assign_length") or "Any length"
+    if length != "Any length":
+        hours = view["_hours"]
+        if length == "Under 7 hours":
+            view = view.loc[hours.lt(7)]
+        elif length == "7 to 9 hours":
+            view = view.loc[hours.ge(7) & hours.le(9)]
+        elif length == "Over 9 hours":
+            view = view.loc[hours.gt(9)]
+    notes = st.session_state.get("assign_notes") or "All notes"
+    if notes == "Has notes":
+        view = view.loc[view["Notes"].gt(0)]
+    elif notes == "No notes":
+        view = view.loc[view["Notes"].eq(0)]
+    return view.reset_index(drop=True)
 
 
 def _block_table(frame: pd.DataFrame, block: str, suggested: set[int]) -> pd.DataFrame:
@@ -1059,7 +1120,11 @@ def _upload_screen() -> None:
                 st.session_state["sheet_options"] = options
                 if not options:
                     bar.empty()
-                    st.error("No Raw Weekday or Weekday sheet was found. The raw sheet needs Block, Route, Start, End, trip place names, and Type.")
+                    st.error(
+                        "No usable sheet was found. Use the sample headers: Block, Route, Direction, "
+                        "Start Time, Start Location, End Time, and End Location. Capital letters do not matter. "
+                        "Asn# is added automatically when that column is missing."
+                    )
                     return
                 choice = auto_choice(options)
                 if choice is not None:
@@ -1075,11 +1140,22 @@ def _upload_screen() -> None:
                 bar.empty()
         st.markdown(
             f"""
-            <div class="sam-requirements">{_icon("info")}<span>The workbook should contain a <strong>Raw Weekday</strong> sheet with Block, Route, start/end times, trip locations and Type.</span></div>
+            <div class="sam-requirements">{_icon("info")}<span>Headers can be any mix of capital and small letters. If <strong>Asn#</strong> is missing, a blank one is added. Extra columns, such as garage notes, can stay in the file.</span></div>
             <div class="sam-next">{_icon("chevron")}<span><strong>What happens next:</strong> We find the correct sheet, build the working copy and open the assignment workspace.</span></div>
             """,
             unsafe_allow_html=True,
         )
+        with st.expander("View sample file"):
+            st.caption("Match these headers. The sample can be downloaded and filled in.")
+            st.dataframe(sample_frame(), use_container_width=True, hide_index=True)
+            st.download_button(
+                "Download sample file",
+                data=sample_workbook_bytes(),
+                file_name="Weekday_sample.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                icon=":material/download:",
+                use_container_width=True,
+            )
 
     options = st.session_state.get("sheet_options") or []
     if options and st.session_state.get("frame") is None:
@@ -1115,9 +1191,10 @@ def _workspace() -> None:
     flash = st.session_state.pop("flash", None)
 
     summary = _summary(frame, notes)
+    visible = _assignment_view(summary)
     picked = _selected_rows(st.session_state.get("made_table"))
-    if picked and not summary.empty and picked[0] < len(summary):
-        label = str(summary.iloc[picked[0]]["Assignment"])
+    if picked and not visible.empty and picked[0] < len(visible):
+        label = str(visible.iloc[picked[0]]["Assignment"])
         token = f"{label}:{picked[0]}"
         if token != st.session_state.get("_pick_token"):
             st.session_state["builder_name"] = label
@@ -1461,9 +1538,10 @@ def _workspace() -> None:
         st.caption("The block or garage setting changed. Suggest the shift again.")
 
     with st.container(border=True):
+        saved_count = f"{len(visible)} of {len(summary)}" if len(visible) != len(summary) else f"{len(summary)} saved"
         st.markdown(
             f'<div class="sam-review-head" style="margin-top:0"><h3 class="sam-block-title">Saved assignments</h3>'
-            f'<span class="sam-count-badge">{len(summary)} saved</span></div>',
+            f'<span class="sam-count-badge">{saved_count}</span></div>',
             unsafe_allow_html=True,
         )
         board_left, board_right = st.columns([1.45, 1])
@@ -1472,19 +1550,53 @@ def _workspace() -> None:
                 st.caption("Saved shifts will show up here. Select one to keep adding to that person.")
                 undo_slot = st.container()
             else:
-                st.dataframe(
-                    summary,
-                    use_container_width=True,
-                    hide_index=True,
-                    height=38 + 35 * len(summary) if len(summary) <= 9 else 360,
-                    selection_mode="single-row",
-                    on_select="rerun",
-                    key="made_table",
+                st.pills("Starts", _WHEN_CHOICES, key="assign_when")
+                find_col, length_col, notes_col = st.columns(3)
+                find_col.text_input(
+                    "Find assignment",
+                    key="assign_find",
+                    placeholder="Name or block",
+                    label_visibility="collapsed",
                 )
+                length_col.selectbox(
+                    "Length",
+                    ["Any length", "Under 7 hours", "7 to 9 hours", "Over 9 hours"],
+                    key="assign_length",
+                    label_visibility="collapsed",
+                )
+                notes_col.selectbox(
+                    "Notes",
+                    ["All notes", "Has notes", "No notes"],
+                    key="assign_notes",
+                    label_visibility="collapsed",
+                )
+                if visible.empty:
+                    st.caption("No assignments match these filters.")
+                else:
+                    st.dataframe(
+                        visible.loc[:, _SUMMARY_COLUMNS],
+                        use_container_width=True,
+                        hide_index=True,
+                        height=38 + 35 * len(visible) if len(visible) <= 9 else 360,
+                        selection_mode="single-row",
+                        on_select="rerun",
+                        key="made_table",
+                    )
                 st.caption("Tick a row to continue that assignment or unassign it.")
+                if not visible.empty and len(visible) != len(summary):
+                    shown_labels = [str(value) for value in visible["Assignment"]]
+                    st.download_button(
+                        f"Download these {len(shown_labels)}",
+                        data=packets_zip(frame, notes, shown_labels),
+                        file_name="selected_assignments.zip",
+                        mime="application/zip",
+                        type="primary",
+                        icon=":material/download:",
+                        use_container_width=True,
+                    )
                 selected_label = ""
-                if picked and picked[0] < len(summary):
-                    selected_label = str(summary.iloc[picked[0]]["Assignment"])
+                if picked and picked[0] < len(visible):
+                    selected_label = str(visible.iloc[picked[0]]["Assignment"])
                 unassign_slot, undo_slot = st.columns(2)
                 if unassign_slot.button(
                     "Unassign selected assignment",

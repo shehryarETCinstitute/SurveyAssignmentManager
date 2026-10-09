@@ -198,8 +198,12 @@ def packet_bytes(frame: pd.DataFrame, label: str, notes: dict[str, list[dict[str
     return _document_bytes(document)
 
 
-def packets_zip(frame: pd.DataFrame, notes: dict[str, list[dict[str, object]]]) -> bytes:
-    labels = assignment_labels(frame)
+def packets_zip(
+    frame: pd.DataFrame,
+    notes: dict[str, list[dict[str, object]]],
+    labels: list[str] | None = None,
+) -> bytes:
+    labels = assignment_labels(frame) if labels is None else [clean_token(label) for label in labels if clean_token(label)]
     if not labels:
         raise ValueError("No assignments to export yet.")
     combined = _new_document()

@@ -42,21 +42,28 @@ KEEP_COLUMNS = [
 ]
 
 
+WEEKDAY_WITHOUT_ASN = WEEKDAY_REQUIRED - {"asn#"}
+
+
+def _norm(name: object) -> str:
+    return " ".join(str(name).replace("\n", " ").strip().lower().split())
+
+
 def _names(columns) -> set[str]:
-    return {str(column).strip().lower() for column in columns}
+    return {_norm(column) for column in columns}
 
 
 def classify_columns(columns) -> str | None:
     names = _names(columns)
     if RAW_REQUIRED <= names:
         return "raw"
-    if WEEKDAY_REQUIRED <= names:
+    if WEEKDAY_WITHOUT_ASN <= names:
         return "weekday"
     return None
 
 
 def _lookup(columns) -> dict[str, str]:
-    return {str(column).strip().lower(): column for column in columns}
+    return {_norm(column): column for column in columns}
 
 
 def _series(frame: pd.DataFrame, *aliases: str) -> pd.Series:
@@ -175,6 +182,40 @@ def load_sheet(data: bytes, sheet_name: str, kind: str) -> pd.DataFrame:
     if kind == "weekday":
         return frame_from_weekday(frame)
     raise ValueError(f"Sheet {sheet_name} is not a Raw Weekday or Weekday sheet.")
+
+
+def sample_frame() -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "Asn#": "",
+                "BLOCK": 1,
+                "ROUTE": 90,
+                "DIRECTION": "TO NASHVILLE",
+                "Start Time": "5:40 AM",
+                "Start Location": "LEBANON STATION",
+                "End Time": "6:35 AM",
+                "End Location": "RIVERFRONT STATION",
+            },
+            {
+                "Asn#": "",
+                "BLOCK": 1,
+                "ROUTE": 90,
+                "DIRECTION": "FROM NASHVILLE",
+                "Start Time": "6:53 AM",
+                "Start Location": "RIVERFRONT STATION",
+                "End Time": "7:30 AM",
+                "End Location": "MT. JULIET STATION",
+            },
+        ]
+    )
+
+
+def sample_workbook_bytes() -> bytes:
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+        sample_frame().to_excel(writer, index=False, sheet_name="Weekday")
+    return buffer.getvalue()
 
 
 def auto_choice(options: list[dict[str, object]]) -> dict[str, object] | None:
