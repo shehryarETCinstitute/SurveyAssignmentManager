@@ -5,6 +5,7 @@ import pandas as pd
 from sam.time_utils import clean_token, duration_hours, format_hours, format_time, time_to_minutes
 
 ANY_PLACE = "(Any place)"
+ALL_ROUTES = "All routes"
 GARAGE_TYPES = {"pull-out", "pull-in", "deadhead"}
 
 
@@ -239,6 +240,119 @@ def cut_full_shift(
             key=lambda ids: abs((duration_hours(first_start, _row(frame, ids[-1])["End Time"]) or 0) - target),
         )
     return running
+
+
+def _batch_cut(
+    ordered: list[dict[str, object]],
+    hub: str,
+    route: str,
+    min_hours: float,
+    max_hours: float,
+    start_after: int | None,
+    end_by: int | None,
+) -> list[int] | None:
+    target = "" if hub == ANY_PLACE else clean_token(hub).casefold()
+    wanted = "" if not route or route == ALL_ROUTES else clean_token(route).casefold()
+    for start_index, first in enumerate(ordered):
+        start_minutes = int(first["start"])
+        if start_after is not None and start_minutes < start_after:
+            continue
+        if wanted and clean_token(first["route"]).casefold() != wanted:
+            continue
+        end_place = clean_token(first["start_place"]).casefold() if not target else target
+        if target and clean_token(first["start_place"]).casefold() != target:
+            continue
+        running: list[int] = []
+        candidates: list[list[int]] = []
+        for trip in ordered[start_index:]:
+            if wanted and clean_token(trip["route"]).casefold() != wanted:
+                break
+            end_minutes = int(trip["end"])
+            if end_by is not None and end_minutes > end_by:
+                break
+            hours = (end_minutes - start_minutes) / 60
+            if hours < 0:
+                hours += 24
+            if running and max_hours > 0 and hours - 1e-9 > max_hours:
+                break
+            running.append(int(trip["id"]))
+            if hours + 1e-9 >= min_hours and clean_token(trip["end_place"]).casefold() == end_place:
+                candidates.append(list(running))
+        if not candidates:
+            continue
+        goal = (min_hours + max_hours) / 2 if max_hours > 0 else min_hours
+        ends = {int(trip["id"]): int(trip["end"]) for trip in ordered[start_index:]}
+
+        def distance(ids: list[int]) -> float:
+            hours = (ends[ids[-1]] - start_minutes) % (24 * 60) / 60
+            return abs(hours - goal)
+
+        return min(candidates, key=distance)
+    return None
+
+
+def plan_batch(
+    frame: pd.DataFrame,
+    hub: str,
+    route: str,
+    min_hours: float,
+    max_hours: float,
+    include_garage: bool,
+    start_after: int | None,
+    end_by: int | None,
+    limit: int = 300,
+) -> list[dict[str, object]]:
+    """Cut as many same-block shifts as possible. Each one starts and ends at the hub.
+
+    A chosen route never skips the other trips on that block. The shift stops
+    when the bus changes route, so the person stays on one continuous piece.
+    """
+    rows = assignable_rows(frame, include_garage)
+    if rows.empty:
+        return []
+    trips: list[dict[str, object]] = []
+    for record in rows.to_dict("records"):
+        start_minutes = time_to_minutes(record["Start Time"])
+        end_minutes = time_to_minutes(record["End Time"])
+        block = clean_token(record["Block"])
+        if start_minutes is None or end_minutes is None or not block:
+            continue
+        trips.append(
+            {
+                "id": int(record["_id"]),
+                "block": block,
+                "start": start_minutes,
+                "end": end_minutes,
+                "route": clean_token(record["Route"]),
+                "start_place": clean_token(record["Start Location"]),
+                "end_place": clean_token(record["End Location"]),
+            }
+        )
+    trips.sort(key=lambda trip: (int(trip["start"]), int(trip["id"])))
+    grouped: dict[str, list[dict[str, object]]] = {}
+    for trip in trips:
+        grouped.setdefault(str(trip["block"]), []).append(trip)
+    reserved: set[int] = set()
+    plans: list[dict[str, object]] = []
+    while len(plans) < limit:
+        best_block = ""
+        best_ids: list[int] | None = None
+        best_start = 10**9
+        for block, ordered_all in grouped.items():
+            ordered = [trip for trip in ordered_all if int(trip["id"]) not in reserved]
+            chosen = _batch_cut(ordered, hub, route, min_hours, max_hours, start_after, end_by)
+            if not chosen:
+                continue
+            start_minutes = next(int(trip["start"]) for trip in ordered if int(trip["id"]) == chosen[0])
+            if start_minutes < best_start:
+                best_block = block
+                best_ids = chosen
+                best_start = start_minutes
+        if not best_ids:
+            break
+        reserved.update(best_ids)
+        plans.append({"block": best_block, "row_ids": best_ids})
+    return plans
 
 
 def cut_round_trip(

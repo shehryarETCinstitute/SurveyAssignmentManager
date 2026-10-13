@@ -15,6 +15,7 @@ from sam.config import (
 )
 from sam.exporting import assignment_labels, packet_bytes, packets_zip, workbook_bytes
 from sam.suggest import (
+    ALL_ROUTES,
     ANY_PLACE,
     connecting_blocks,
     cut_full_shift,
@@ -26,6 +27,7 @@ from sam.suggest import (
     first_open_block,
     is_garage,
     open_counts,
+    plan_batch,
     label_exists,
     last_assigned_row,
     propose_label,
@@ -1024,6 +1026,33 @@ def _accept(frame: pd.DataFrame, suggestion: dict, label: str, note: str) -> Non
     st.session_state["_clear_note"] = True
 
 
+def _accept_batch(frame: pd.DataFrame, plans: list[dict]) -> None:
+    number = next_assignment_number(frame)
+    previous: dict[int, str] = {}
+    labels: list[str] = []
+    for plan in plans:
+        row_ids = [int(value) for value in plan["row_ids"]]
+        current = frame.loc[frame["_id"].isin(row_ids), "Asn#"]
+        if current.map(clean_token).ne("").any():
+            raise ValueError("Some of these trips were already assigned. Generate the batch again.")
+        label = str(number)
+        number += 1
+        labels.append(label)
+        for row_id in row_ids:
+            previous[row_id] = ""
+        frame.loc[frame["_id"].isin(row_ids), "Asn#"] = label
+    st.session_state["frame"] = frame
+    st.session_state["undo"] = {"ids": list(previous), "old": previous, "label": "the batch", "note": False}
+    st.session_state["suggestion"] = None
+    st.session_state["batch_plan"] = None
+    st.session_state["revision"] = int(st.session_state.get("revision", 0)) + 1
+    st.session_state["packet_cache"] = {}
+    first, last = labels[0], labels[-1]
+    shown = first if first == last else f"{first}–{last}"
+    st.session_state["flash"] = f"Saved {len(labels)} assignments ({shown})."
+    st.session_state["_clear_note"] = True
+
+
 def _undo(frame: pd.DataFrame) -> None:
     undo = st.session_state.get("undo")
     if not undo:
@@ -1262,189 +1291,275 @@ def _workspace() -> None:
 
     left, right = st.columns([0.86, 1.14], gap="large")
     with left:
-        with st.container(border=True):
-            st.markdown("**Cut a shift**")
-            st.text_input(
-                "Assignment name",
-                key="builder_name",
-                placeholder="Blank uses the next number",
-                help="Type a name such as Aisha 1 to keep adding pieces to the same person. Leave it blank for 1, 2, 3.",
-            )
-            name_now = clean_token(st.session_state.get("builder_name"))
-            continuing = label_exists(frame, name_now)
-            last = last_assigned_row(frame, name_now) if continuing else None
-            if include_ready:
-                st.checkbox(
-                    "Include garage moves",
-                    key="include_garage",
-                    help="Pull-out, pull-in, and deadhead. Leave this off for a normal shift. Turn it on for express.",
+        st.pills("How to assign", ["One shift", "Many shifts"], key="work_mode", default="One shift")
+        many = st.session_state.get("work_mode") == "Many shifts"
+        if many:
+            with st.container(border=True):
+                st.markdown("**Generate many shifts**")
+                st.caption("Creates every shift that starts and ends at the same place, within the hours you set. Each shift stays on one block. A single route only uses trips of that route that run one after another.")
+                place_choices = [value for value in location_choices if value != ANY_PLACE]
+                if place_choices and st.session_state.get("builder_hub") not in place_choices:
+                    st.session_state["builder_hub"] = place_choices[0]
+                st.selectbox("Start and end at", place_choices or location_choices, key="builder_hub")
+                routes = sorted(
+                    {clean_token(value) for value in frame["Route"].tolist() if clean_token(value)},
+                    key=lambda value: (0, int(value)) if value.isdigit() else (1, value.casefold()),
                 )
-            include_garage = bool(st.session_state.get("include_garage")) if include_ready else True
-            connect_options: list[dict[str, object]] = []
-            if continuing and last is not None:
-                end_minutes = time_to_minutes(last["End Time"]) or 0
-                st.caption(
-                    f"{name_now} is at {clean_token(last['End Location'])} at {format_time(last['End Time'])}."
-                )
-                st.checkbox("Choose any block", key="choose_any_block")
-                if not st.session_state.get("choose_any_block"):
-                    connect_options = connecting_blocks(
-                        frame,
-                        clean_token(last["End Location"]),
-                        end_minutes,
-                        include_garage,
-                        int(st.session_state["min_switch"]),
-                        int(st.session_state["max_switch"]),
-                    )
-            else:
-                st.selectbox("Start at", location_choices, key="builder_hub")
-
-            blocks = sorted(
-                {clean_token(value) for value in frame["Block"].tolist() if clean_token(value)},
-                key=block_sort_key,
-            )
-            connect_map = {str(item["block"]): item for item in connect_options}
-            if continuing and last is not None and not st.session_state.get("choose_any_block"):
-                block_options = [str(item["block"]) for item in connect_options]
-            else:
-                block_options = blocks
-            if block_options and st.session_state.get("builder_block") not in block_options:
-                if st.session_state.get("builder_block") is None and not continuing:
-                    st.session_state["builder_block"] = first_open_block(
-                        frame,
-                        block_options,
-                        include_garage,
-                        str(st.session_state.get("builder_hub") or ANY_PLACE),
-                        float(st.session_state.get("min_hours") or 0),
-                        float(st.session_state.get("max_hours") or 0),
-                    )
-                else:
-                    st.session_state["builder_block"] = block_options[0]
-
-            open_by_block = open_counts(frame, include_garage)
-
-            def block_label(block: str) -> str:
-                item = connect_map.get(block)
-                if item is not None:
-                    return (
-                        f"{block}   ·   {format_time(item['start'])}   ·   route {item['route']}"
-                        f"   ·   {int(item['gap'])} min"
-                    )
-                return f"{block}   ·   {open_by_block.get(block, 0)} open"
-
-            if not block_options:
-                st.info("No open trip leaves that place inside the switch window. Widen it under More options, or choose any block.")
-                selected_block = ""
-            else:
-                selected_block = st.selectbox("Block", block_options, key="builder_block", format_func=block_label)
-
-            with st.expander("More options"):
+                route_options = [ALL_ROUTES, *routes]
+                if st.session_state.get("batch_route") not in route_options:
+                    st.session_state["batch_route"] = ALL_ROUTES
+                st.selectbox("Routes", route_options, key="batch_route")
                 hour_left, hour_right = st.columns(2)
-                min_hours = hour_left.number_input("No shorter than (hours)", min_value=0.0, max_value=24.0, step=0.5, key="min_hours")
-                max_hours = hour_right.number_input("No longer than (hours)", min_value=0.0, max_value=24.0, step=0.5, key="max_hours")
-                if not continuing:
-                    st.checkbox("Start after a clock time", key="use_start_after")
-                    if st.session_state.get("use_start_after"):
-                        _seed("start_after_time", pd.Timestamp("05:00").time())
-                        st.time_input("Start after", key="start_after_time", step=300)
+                hour_left.number_input("No shorter than (hours)", min_value=0.0, max_value=24.0, step=0.5, key="min_hours")
+                hour_right.number_input("No longer than (hours)", min_value=0.0, max_value=24.0, step=0.5, key="max_hours")
+                if float(st.session_state.get("min_hours") or 0) > float(st.session_state.get("max_hours") or 0) > 0:
+                    st.warning("The shortest length is greater than the longest length.")
+                st.checkbox("Start after a clock time", key="use_start_after")
+                if st.session_state.get("use_start_after"):
+                    _seed("start_after_time", pd.Timestamp("05:00").time())
+                    st.time_input("Start after", key="start_after_time", step=300)
                 st.checkbox("End by a clock time", key="use_end_by")
                 if st.session_state.get("use_end_by"):
                     _seed("end_by_time", pd.Timestamp("14:30").time())
                     st.time_input("End by", key="end_by_time", step=300)
-                gap_left, gap_right = st.columns(2)
-                gap_left.number_input("Minutes to change buses, at least", min_value=0, max_value=240, step=5, key="min_switch")
-                gap_right.number_input("Minutes to change buses, at most", min_value=0, max_value=240, step=5, key="max_switch")
-
-            min_hours = float(st.session_state["min_hours"])
-            max_hours = float(st.session_state["max_hours"])
-            if min_hours > 0 and max_hours > 0 and min_hours > max_hours:
-                st.warning("The shortest length is greater than the longest length.")
-            start_after = clock_input_to_minutes(st.session_state.get("start_after_time")) if st.session_state.get("use_start_after") and not continuing else None
-            end_by = clock_input_to_minutes(st.session_state.get("end_by_time")) if st.session_state.get("use_end_by") else None
-            hub = st.session_state.get("builder_hub") or ANY_PLACE
-
-            if continuing and last is not None:
-                rule = (
-                    f"Next piece of {name_now}: a round trip that leaves "
-                    f"{clean_token(last['End Location'])} after {format_time(last['End Time'])}."
+                if st.button("Generate assignments", type="primary", icon=":material/auto_awesome:", use_container_width=True):
+                    batch_start = clock_input_to_minutes(st.session_state.get("start_after_time")) if st.session_state.get("use_start_after") else None
+                    batch_end = clock_input_to_minutes(st.session_state.get("end_by_time")) if st.session_state.get("use_end_by") else None
+                    st.session_state["batch_plan"] = plan_batch(
+                        frame,
+                        str(st.session_state.get("builder_hub") or ""),
+                        str(st.session_state.get("batch_route") or ALL_ROUTES),
+                        float(st.session_state.get("min_hours") or 0),
+                        float(st.session_state.get("max_hours") or 0),
+                        include_garage,
+                        batch_start,
+                        batch_end,
+                    )
+                    st.rerun()
+        else:
+            with st.container(border=True):
+                st.markdown("**Cut a shift**")
+                st.text_input(
+                    "Assignment name",
+                    key="builder_name",
+                    placeholder="Blank uses the next number",
+                    help="Type a name such as Aisha 1 to keep adding pieces to the same person. Leave it blank for 1, 2, 3.",
                 )
-            else:
-                where = "any place" if hub == ANY_PLACE else str(hub)
-                rule = (
-                    f"Full shift on block {selected_block or '—'}: open trips starting at {where}, "
-                    f"about {min_hours:g}–{max_hours:g} hours, ending back there."
-                )
-            st.caption(rule)
-
-            connect = None
-            if continuing and last is not None:
-                connect = (clean_token(last["End Location"]), time_to_minutes(last["End Time"]) or 0)
-
-            suggest_full = False
-            suggest_round = False
-            suggest_next = False
-            if continuing:
-                suggest_next = st.button(
-                    "Suggest next piece",
-                    type="primary",
-                    use_container_width=True,
-                    disabled=not selected_block,
-                )
-            else:
-                suggest_full = st.button("Suggest full shift", type="primary", use_container_width=True, disabled=not selected_block)
-                suggest_round = st.button("Suggest round trip", use_container_width=True, disabled=not selected_block)
-
-            if selected_block and (suggest_full or suggest_round or suggest_next):
-                mode = "round" if suggest_round or suggest_next else "full"
-                built, error = _make_cut(
-                    frame,
-                    block=selected_block,
-                    hub=hub,
-                    start_after=start_after,
-                    end_by=end_by,
-                    min_hours=min_hours,
-                    max_hours=max_hours,
-                    include_garage=include_garage,
-                    mode=mode,
-                    connect=connect if suggest_next else None,
-                )
-                if error:
-                    st.session_state["suggestion"] = None
-                    st.error(error)
+                name_now = clean_token(st.session_state.get("builder_name"))
+                continuing = label_exists(frame, name_now)
+                last = last_assigned_row(frame, name_now) if continuing else None
+                if include_ready:
+                    st.checkbox(
+                        "Include garage moves",
+                        key="include_garage",
+                        help="Pull-out, pull-in, and deadhead. Leave this off for a normal shift. Turn it on for express.",
+                    )
+                include_garage = bool(st.session_state.get("include_garage")) if include_ready else True
+                connect_options: list[dict[str, object]] = []
+                if continuing and last is not None:
+                    end_minutes = time_to_minutes(last["End Time"]) or 0
+                    st.caption(
+                        f"{name_now} is at {clean_token(last['End Location'])} at {format_time(last['End Time'])}."
+                    )
+                    st.checkbox("Choose any block", key="choose_any_block")
+                    if not st.session_state.get("choose_any_block"):
+                        connect_options = connecting_blocks(
+                            frame,
+                            clean_token(last["End Location"]),
+                            end_minutes,
+                            include_garage,
+                            int(st.session_state["min_switch"]),
+                            int(st.session_state["max_switch"]),
+                        )
                 else:
-                    st.session_state["suggestion"] = built
+                    st.selectbox("Start at", location_choices, key="builder_hub")
+
+                blocks = sorted(
+                    {clean_token(value) for value in frame["Block"].tolist() if clean_token(value)},
+                    key=block_sort_key,
+                )
+                connect_map = {str(item["block"]): item for item in connect_options}
+                if continuing and last is not None and not st.session_state.get("choose_any_block"):
+                    block_options = [str(item["block"]) for item in connect_options]
+                else:
+                    block_options = blocks
+                if block_options and st.session_state.get("builder_block") not in block_options:
+                    if st.session_state.get("builder_block") is None and not continuing:
+                        st.session_state["builder_block"] = first_open_block(
+                            frame,
+                            block_options,
+                            include_garage,
+                            str(st.session_state.get("builder_hub") or ANY_PLACE),
+                            float(st.session_state.get("min_hours") or 0),
+                            float(st.session_state.get("max_hours") or 0),
+                        )
+                    else:
+                        st.session_state["builder_block"] = block_options[0]
+
+                open_by_block = open_counts(frame, include_garage)
+
+                def block_label(block: str) -> str:
+                    item = connect_map.get(block)
+                    if item is not None:
+                        return (
+                            f"{block}   ·   {format_time(item['start'])}   ·   route {item['route']}"
+                            f"   ·   {int(item['gap'])} min"
+                        )
+                    return f"{block}   ·   {open_by_block.get(block, 0)} open"
+
+                if not block_options:
+                    st.info("No open trip leaves that place inside the switch window. Widen it under More options, or choose any block.")
+                    selected_block = ""
+                else:
+                    selected_block = st.selectbox("Block", block_options, key="builder_block", format_func=block_label)
+
+                with st.expander("More options"):
+                    hour_left, hour_right = st.columns(2)
+                    min_hours = hour_left.number_input("No shorter than (hours)", min_value=0.0, max_value=24.0, step=0.5, key="min_hours")
+                    max_hours = hour_right.number_input("No longer than (hours)", min_value=0.0, max_value=24.0, step=0.5, key="max_hours")
+                    if not continuing:
+                        st.checkbox("Start after a clock time", key="use_start_after")
+                        if st.session_state.get("use_start_after"):
+                            _seed("start_after_time", pd.Timestamp("05:00").time())
+                            st.time_input("Start after", key="start_after_time", step=300)
+                    st.checkbox("End by a clock time", key="use_end_by")
+                    if st.session_state.get("use_end_by"):
+                        _seed("end_by_time", pd.Timestamp("14:30").time())
+                        st.time_input("End by", key="end_by_time", step=300)
+                    gap_left, gap_right = st.columns(2)
+                    gap_left.number_input("Minutes to change buses, at least", min_value=0, max_value=240, step=5, key="min_switch")
+                    gap_right.number_input("Minutes to change buses, at most", min_value=0, max_value=240, step=5, key="max_switch")
+
+                min_hours = float(st.session_state["min_hours"])
+                max_hours = float(st.session_state["max_hours"])
+                if min_hours > 0 and max_hours > 0 and min_hours > max_hours:
+                    st.warning("The shortest length is greater than the longest length.")
+                start_after = clock_input_to_minutes(st.session_state.get("start_after_time")) if st.session_state.get("use_start_after") and not continuing else None
+                end_by = clock_input_to_minutes(st.session_state.get("end_by_time")) if st.session_state.get("use_end_by") else None
+                hub = st.session_state.get("builder_hub") or ANY_PLACE
+
+                if continuing and last is not None:
+                    rule = (
+                        f"Next piece of {name_now}: a round trip that leaves "
+                        f"{clean_token(last['End Location'])} after {format_time(last['End Time'])}."
+                    )
+                else:
+                    where = "any place" if hub == ANY_PLACE else str(hub)
+                    rule = (
+                        f"Full shift on block {selected_block or '—'}: open trips starting at {where}, "
+                        f"about {min_hours:g}–{max_hours:g} hours, ending back there."
+                    )
+                st.caption(rule)
+
+                connect = None
+                if continuing and last is not None:
+                    connect = (clean_token(last["End Location"]), time_to_minutes(last["End Time"]) or 0)
+
+                suggest_full = False
+                suggest_round = False
+                suggest_next = False
+                if continuing:
+                    suggest_next = st.button(
+                        "Suggest next piece",
+                        type="primary",
+                        use_container_width=True,
+                        disabled=not selected_block,
+                    )
+                else:
+                    suggest_full = st.button("Suggest full shift", type="primary", use_container_width=True, disabled=not selected_block)
+                    suggest_round = st.button("Suggest round trip", use_container_width=True, disabled=not selected_block)
+
+                if selected_block and (suggest_full or suggest_round or suggest_next):
+                    mode = "round" if suggest_round or suggest_next else "full"
+                    built, error = _make_cut(
+                        frame,
+                        block=selected_block,
+                        hub=hub,
+                        start_after=start_after,
+                        end_by=end_by,
+                        min_hours=min_hours,
+                        max_hours=max_hours,
+                        include_garage=include_garage,
+                        mode=mode,
+                        connect=connect if suggest_next else None,
+                    )
+                    if error:
+                        st.session_state["suggestion"] = None
+                        st.error(error)
+                    else:
+                        st.session_state["suggestion"] = built
 
     suggestion = st.session_state.get("suggestion")
     active = suggestion if _suggestion_is_current(suggestion, st.session_state.get("builder_block", ""), include_garage) else None
     suggested_ids = set(active["row_ids"]) if active else set()
 
     with right:
-        with st.container(border=True):
-            block_name = st.session_state.get("builder_block") or "—"
-            if not block_name or block_name == "—":
-                st.markdown("**Block**")
-                st.caption("Choose a block to see its day.")
-            else:
-                table = _block_table(frame, block_name, suggested_ids)
-                counts = table["Status"].value_counts() if not table.empty else {}
-                open_n = int(counts.get(OPEN, 0))
-                garage_n = int(counts.get(GARAGE, 0))
+        if many:
+            plans = st.session_state.get("batch_plan") or []
+            with st.container(border=True):
                 st.markdown(
-                    f"""
-                    <div class="sam-head">
-                        <div>
-                            <h3 class="sam-block-title">Block {html.escape(str(block_name))}</h3>
-                            <p class="sam-block-count">{open_n} open trips · {garage_n} garage moves</p>
-                        </div>
-                        <div class="sam-legend">
-                            <span><i class="sam-dot open"></i>Open</span>
-                            <span><i class="sam-dot garage"></i>Garage</span>
-                        </div>
-                    </div>
-                    {_trip_table_html(table)}
-                    """,
+                    f'<div class="sam-review-head" style="margin-top:0"><h3 class="sam-block-title">Ready to save</h3>'
+                    f'<span class="sam-count-badge">{len(plans)} shifts</span></div>',
                     unsafe_allow_html=True,
                 )
+                if st.session_state.get("batch_plan") is None:
+                    st.caption("Set the place, route, and hours, then generate. The shifts will show up here before anything is saved.")
+                elif not plans:
+                    st.caption("Nothing open fits those rules. Try a shorter minimum, a later end time, or all routes.")
+                else:
+                    preview_rows = []
+                    next_number = next_assignment_number(frame)
+                    for index, plan in enumerate(plans):
+                        ids = [int(value) for value in plan["row_ids"]]
+                        first = frame.loc[frame["_id"].eq(ids[0])].iloc[0]
+                        last_row = frame.loc[frame["_id"].eq(ids[-1])].iloc[0]
+                        preview_rows.append(
+                            {
+                                "#": next_number + index,
+                                "From": format_time(first["Start Time"]),
+                                "To": format_time(last_row["End Time"]),
+                                "Hours": format_hours(span_hours(frame, ids)),
+                                "Trips": len(ids),
+                                "Block": plan["block"],
+                                "Routes": _route_path(frame, ids),
+                            }
+                        )
+                    st.dataframe(pd.DataFrame(preview_rows), use_container_width=True, hide_index=True, height=min(420, 38 + 35 * len(preview_rows)))
+                    st.caption("These are not saved yet. Each shift stays on one block and ends where it started.")
+                    if st.button("Save all these shifts", type="primary", icon=":material/check:", use_container_width=True):
+                        try:
+                            _accept_batch(frame, plans)
+                        except Exception as exc:
+                            st.error(str(exc))
+                        else:
+                            st.rerun()
+        else:
+            with st.container(border=True):
+                block_name = st.session_state.get("builder_block") or "—"
+                if not block_name or block_name == "—":
+                    st.markdown("**Block**")
+                    st.caption("Choose a block to see its day.")
+                else:
+                    table = _block_table(frame, block_name, suggested_ids)
+                    counts = table["Status"].value_counts() if not table.empty else {}
+                    open_n = int(counts.get(OPEN, 0))
+                    garage_n = int(counts.get(GARAGE, 0))
+                    st.markdown(
+                        f"""
+                        <div class="sam-head">
+                            <div>
+                                <h3 class="sam-block-title">Block {html.escape(str(block_name))}</h3>
+                                <p class="sam-block-count">{open_n} open trips · {garage_n} garage moves</p>
+                            </div>
+                            <div class="sam-legend">
+                                <span><i class="sam-dot open"></i>Open</span>
+                                <span><i class="sam-dot garage"></i>Garage</span>
+                            </div>
+                        </div>
+                        {_trip_table_html(table)}
+                        """,
+                        unsafe_allow_html=True,
+                    )
 
     if active:
         row_ids = [int(value) for value in active["row_ids"]]
