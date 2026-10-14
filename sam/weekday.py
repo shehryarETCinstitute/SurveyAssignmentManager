@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from io import BytesIO
 
@@ -267,6 +268,44 @@ def default_hub(frame: pd.DataFrame, preferred: str) -> str:
     if counts.empty:
         return ""
     return str(counts.value_counts().index[0])
+
+
+_BAY_SUFFIX = re.compile(r"(?i)(?:\s*[-–—]\s*|\s+)bay\s*#?\s*(\d+)\s*$")
+
+
+def split_bay_hubs(names: list[object] | pd.Series) -> list[dict[str, object]]:
+    """Stations whose trips are split into more than one bay name.
+
+    Names are not changed. The caller only uses this to warn that Bay 18 and
+    Bay 24 will be treated as different places.
+    """
+    stations: dict[str, str] = {}
+    bays_by_station: dict[str, dict[int, str]] = {}
+    for raw in names:
+        text = clean_token(raw)
+        match = _BAY_SUFFIX.search(text)
+        if not match or match.start() == 0:
+            continue
+        station = text[: match.start()].strip(" -–—")
+        if len(station) < 2:
+            continue
+        key = station.casefold()
+        stations.setdefault(key, station)
+        bays_by_station.setdefault(key, {})[int(match.group(1))] = text
+    hubs: list[dict[str, object]] = []
+    for key, bays in bays_by_station.items():
+        if len(bays) < 2:
+            continue
+        numbers = sorted(bays)
+        hubs.append(
+            {
+                "station": stations[key],
+                "bays": numbers,
+                "names": [bays[number] for number in numbers],
+            }
+        )
+    hubs.sort(key=lambda item: (-len(item["bays"]), str(item["station"]).casefold()))
+    return hubs
 
 
 def block_sort_key(value: str) -> tuple:

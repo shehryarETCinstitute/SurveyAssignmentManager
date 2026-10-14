@@ -54,6 +54,7 @@ from sam.weekday import (
     open_regular_count,
     sample_frame,
     sample_workbook_bytes,
+    split_bay_hubs,
 )
 
 SUGGESTED = "Suggested"
@@ -335,6 +336,19 @@ def _inject_css() -> None:
             padding: 0.45rem 0.7rem;
             margin-top: 0.45rem;
         }
+        .sam-bay-alert {
+            background: #FFF7ED;
+            border: 1px solid #FDBA74;
+            color: #9A3412;
+            border-radius: 14px;
+            padding: 0.9rem 1.05rem 1rem;
+            margin: 0.15rem 0 1.15rem;
+            line-height: 1.45;
+        }
+        .sam-bay-alert strong { color: #9A3412; }
+        .sam-bay-alert p { margin: 0.35rem 0 0; }
+        .sam-bay-alert ul { margin: 0.55rem 0 0; padding-left: 1.15rem; }
+        .sam-bay-alert li { margin: 0.12rem 0; }
         .sam-steps {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -1093,6 +1107,35 @@ def _unassign(frame: pd.DataFrame, label: str) -> None:
     st.session_state["flash"] = f"Unassigned {label}. {count} trips are open again."
 
 
+def _bay_alert(hubs: list[dict[str, object]]) -> None:
+    if not hubs:
+        return
+    shown = hubs[:4]
+    example = shown[0]
+    example_name = html.escape(str(example["names"][0]))
+    station = html.escape(str(example["station"]))
+    items: list[str] = []
+    for hub in shown:
+        numbers = ", ".join(str(number) for number in hub["bays"])
+        items.append(
+            f"<li><strong>{html.escape(str(hub['station']))}</strong> · bays {html.escape(numbers)}</li>"
+        )
+    extra = len(hubs) - len(shown)
+    more = f"<p>And {extra} more {'station' if extra == 1 else 'stations'}.</p>" if extra else ""
+    st.markdown(
+        f"""
+        <div class="sam-bay-alert">
+            <strong>These bays may need to be one hub</strong>
+            <p>This file uses a separate name for each bay. A shift only starts and ends at the exact name you pick, so one bay does not include the others at that station.</p>
+            <p>If they are the same station, edit the file before uploading and give them one name. For example, change <strong>{example_name}</strong> to <strong>{station}</strong>.</p>
+            <ul>{"".join(items)}</ul>
+            {more}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def _upload_screen() -> None:
     _header(
         "Build clear survey shifts from a Raw Weekday workbook, review every trip, then save and download.",
@@ -1288,6 +1331,8 @@ def _workspace() -> None:
     continuing = label_exists(frame, name_now)
     last = last_assigned_row(frame, name_now) if continuing else None
     include_garage = bool(st.session_state.get("include_garage"))
+    bay_hubs = split_bay_hubs(pd.concat([frame["Start Location"], frame["End Location"]], ignore_index=True))
+    _bay_alert(bay_hubs)
 
     left, right = st.columns([0.86, 1.14], gap="large")
     with left:
@@ -1301,6 +1346,15 @@ def _workspace() -> None:
                 if place_choices and st.session_state.get("builder_hub") not in place_choices:
                     st.session_state["builder_hub"] = place_choices[0]
                 st.selectbox("Start and end at", place_choices or location_choices, key="builder_hub")
+                chosen_hub = str(st.session_state.get("builder_hub") or "")
+                for bay_hub in bay_hubs:
+                    if chosen_hub in bay_hub["names"]:
+                        bay_numbers = ", ".join(str(number) for number in bay_hub["bays"])
+                        st.caption(
+                            f"Only this bay is included. {bay_hub['station']} also has bays {bay_numbers}. "
+                            "Use one name in the file if they should be one hub."
+                        )
+                        break
                 routes = sorted(
                     {clean_token(value) for value in frame["Route"].tolist() if clean_token(value)},
                     key=lambda value: (0, int(value)) if value.isdigit() else (1, value.casefold()),
