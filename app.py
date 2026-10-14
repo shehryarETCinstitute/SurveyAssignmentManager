@@ -27,6 +27,7 @@ from sam.suggest import (
     first_open_block,
     is_garage,
     open_counts,
+    explain_empty_batch,
     plan_batch,
     label_exists,
     last_assigned_row,
@@ -1379,17 +1380,39 @@ def _workspace() -> None:
                 if st.button("Generate assignments", type="primary", icon=":material/auto_awesome:", use_container_width=True):
                     batch_start = clock_input_to_minutes(st.session_state.get("start_after_time")) if st.session_state.get("use_start_after") else None
                     batch_end = clock_input_to_minutes(st.session_state.get("end_by_time")) if st.session_state.get("use_end_by") else None
-                    st.session_state["batch_plan"] = plan_batch(
+                    batch_hub = str(st.session_state.get("builder_hub") or "")
+                    batch_route = str(st.session_state.get("batch_route") or ALL_ROUTES)
+                    batch_min = float(st.session_state.get("min_hours") or 0)
+                    batch_max = float(st.session_state.get("max_hours") or 0)
+                    built = plan_batch(
                         frame,
-                        str(st.session_state.get("builder_hub") or ""),
-                        str(st.session_state.get("batch_route") or ALL_ROUTES),
-                        float(st.session_state.get("min_hours") or 0),
-                        float(st.session_state.get("max_hours") or 0),
+                        batch_hub,
+                        batch_route,
+                        batch_min,
+                        batch_max,
                         include_garage,
                         batch_start,
                         batch_end,
                     )
+                    st.session_state["batch_plan"] = built
+                    st.session_state["batch_empty_reason"] = (
+                        ""
+                        if built
+                        else explain_empty_batch(
+                            frame,
+                            batch_hub,
+                            batch_route,
+                            batch_min,
+                            batch_max,
+                            include_garage,
+                            batch_start,
+                            batch_end,
+                        )
+                    )
                     st.rerun()
+                empty_reason = st.session_state.get("batch_empty_reason") or ""
+                if empty_reason and not st.session_state.get("batch_plan"):
+                    st.warning(empty_reason)
         else:
             with st.container(border=True):
                 st.markdown("**Cut a shift**")
@@ -1559,7 +1582,10 @@ def _workspace() -> None:
                 if st.session_state.get("batch_plan") is None:
                     st.caption("Set the place, route, and hours, then generate. The shifts will show up here before anything is saved.")
                 elif not plans:
-                    st.caption("Nothing open fits those rules. Try a shorter minimum, a later end time, or all routes.")
+                    reason = st.session_state.get("batch_empty_reason") or (
+                        "Nothing open fits those rules. Try a shorter minimum, a later end time, or all routes."
+                    )
+                    st.warning(reason)
                 else:
                     preview_rows = []
                     next_number = next_assignment_number(frame)

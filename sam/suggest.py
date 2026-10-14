@@ -355,6 +355,127 @@ def plan_batch(
     return plans
 
 
+def _clock_label(minutes: int) -> str:
+    hour, minute = divmod(int(minutes) % (24 * 60), 60)
+    suffix = "AM" if hour < 12 else "PM"
+    hour12 = hour % 12 or 12
+    return f"{hour12}:{minute:02d} {suffix}"
+
+
+def _name_list(names: list[str]) -> str:
+    if not names:
+        return ""
+    if len(names) == 1:
+        return names[0]
+    if len(names) == 2:
+        return f"{names[0]} and {names[1]}"
+    return ", ".join(names[:-1]) + f", and {names[-1]}"
+
+
+def explain_empty_batch(
+    frame: pd.DataFrame,
+    hub: str,
+    route: str,
+    min_hours: float,
+    max_hours: float,
+    include_garage: bool,
+    start_after: int | None,
+    end_by: int | None,
+) -> str:
+    """Say why a batch came back empty, in words the user can fix in the file."""
+    hub_name = clean_token(hub) or "that place"
+    target = hub_name.casefold()
+    wanted = "" if not route or route == ALL_ROUTES else clean_token(route).casefold()
+    route_name = clean_token(route)
+    rows = assignable_rows(frame, include_garage)
+    trips: list[dict[str, object]] = []
+    for record in rows.to_dict("records"):
+        start_minutes = time_to_minutes(record["Start Time"])
+        end_minutes = time_to_minutes(record["End Time"])
+        block = clean_token(record["Block"])
+        if start_minutes is None or end_minutes is None or not block:
+            continue
+        route_value = clean_token(record["Route"])
+        if wanted and route_value.casefold() != wanted:
+            continue
+        trips.append(
+            {
+                "id": int(record["_id"]),
+                "block": block,
+                "start": start_minutes,
+                "end": end_minutes,
+                "route": route_value,
+                "start_place": clean_token(record["Start Location"]),
+                "end_place": clean_token(record["End Location"]),
+            }
+        )
+    if not trips:
+        if wanted:
+            return f"No open trip on route {route_name} has a start and end time."
+        return "No open trip has a start and end time."
+    grouped: dict[str, list[dict[str, object]]] = {}
+    for trip in sorted(trips, key=lambda item: (int(item["start"]), int(item["id"]))):
+        grouped.setdefault(str(trip["block"]), []).append(trip)
+    starts = [trip for trip in trips if str(trip["start_place"]).casefold() == target]
+    ends = [trip for trip in trips if str(trip["end_place"]).casefold() == target]
+    if not starts:
+        if wanted:
+            return f"No open trip on route {route_name} starts at {hub_name}."
+        return f"No open trip starts at {hub_name}."
+    if not ends:
+        returns: dict[str, int] = {}
+        for ordered in grouped.values():
+            for previous, following in zip(ordered, ordered[1:]):
+                if str(following["start_place"]).casefold() != target:
+                    continue
+                gap = int(following["start"]) - int(previous["end"])
+                if gap < 0:
+                    gap += 24 * 60
+                if gap > 45:
+                    continue
+                end_place = str(previous["end_place"])
+                if end_place.casefold() == target:
+                    continue
+                returns[end_place] = returns.get(end_place, 0) + 1
+        lead = f"{len(starts):,} trips start at {hub_name}, but none end there."
+        if returns:
+            names = [name for name, _count in sorted(returns.items(), key=lambda item: (-item[1], item[0]))[:3]]
+            return (
+                f"{lead} The return trips end at {_name_list(names)}. "
+                f"Use {hub_name} in End Location as well, then generate again."
+            )
+        return (
+            f"{lead} A shift has to start and end at the same place. "
+            f"Use {hub_name} in End Location as well, then generate again."
+        )
+
+    def any_cut(after: int | None, by: int | None, low: float, high: float) -> bool:
+        for ordered in grouped.values():
+            if _batch_cut(ordered, hub, route, low, high, after, by):
+                return True
+        return False
+
+    if (start_after is not None or end_by is not None) and any_cut(None, None, min_hours, max_hours):
+        window: list[str] = []
+        if start_after is not None:
+            window.append(f"start after {_clock_label(start_after)}")
+        if end_by is not None:
+            window.append(f"end by {_clock_label(end_by)}")
+        return (
+            f"Trips do start and end at {hub_name} within {min_hours:g}–{max_hours:g} hours, "
+            f"but none of them {' and '.join(window)}."
+        )
+    if max_hours > 0 and any_cut(None, None, 0, 24):
+        return (
+            f"Trips do start and end at {hub_name}, but none of them stay within "
+            f"{min_hours:g}–{max_hours:g} hours."
+        )
+    return (
+        f"No open trip both starts and ends at {hub_name} within these rules. "
+        "Check the place, the hours, and the route."
+    )
+
+
 def cut_round_trip(
     frame: pd.DataFrame,
     ordered: list[int],
